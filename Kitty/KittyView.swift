@@ -11,25 +11,30 @@ import SwiftData
 struct KittyView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Kitty.name) private var kittens: [Kitty]
-
+    
     @State private var isPresentingAddKittyAlert = false
     @State private var newKittyName = ""
     @State private var newKittyAge = ""
-
+    
     var body: some View {
         NavigationSplitView {
             List {
                 ForEach(kittens) { kitty in
-                    VStack(alignment: .leading) {
-                        Text(kitty.name)
-                            .font(.headline)
-                        Text("Age: \(kitty.age)")
-                            .font(.subheadline)
+                    HStack {
+                        Text(kitty.emoji)
+                            .font(.largeTitle)
+                        VStack(alignment: .leading) {
+                            Text(kitty.name)
+                                .font(.headline)
+                            Text("Age: \(kitty.age)")
+                                .font(.subheadline)
+                        }
                     }
                 }
                 .onDelete(perform: deleteKitties)
             }
             .navigationTitle("Kitties")
+            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     EditButton()
@@ -53,6 +58,10 @@ struct KittyView: View {
             } message: {
                 Text("Enter the name and age of the new kitty.")
             }
+            .onAppear {
+                KittySamples.shared.populateSampleDataIfNeeded(
+                    modelContext: modelContext)
+            }
         } detail: {
             Text("Select a kitty")
         }
@@ -60,7 +69,10 @@ struct KittyView: View {
     
     private func addKitty() {
         guard !newKittyName.isEmpty, let age = Int(newKittyAge) else { return }
-        let newKitty = Kitty(name: newKittyName, age: age)
+        let newKitty = Kitty(
+            name: newKittyName,
+            age: age,
+            emoji: catEmojis.randomElement()!)
         modelContext.insert(newKitty)
         newKittyName = ""
         newKittyAge = ""
@@ -75,5 +87,7 @@ struct KittyView: View {
 }
 
 #Preview {
-    KittyView()
+    let container = KittySamples.shared.createPreviewModelContainer()
+    return KittyView()
+        .modelContainer(container)
 }
